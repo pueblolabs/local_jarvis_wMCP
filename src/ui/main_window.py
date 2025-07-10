@@ -32,30 +32,8 @@ from PyQt6.QtGui import QIcon, QPalette, QColor, QDesktopServices
 import pyperclip
 from qasync import asyncSlot
 
-# --- Linkification Helpers -------------------------------------------------
-URL_RE = re.compile(r'(https?://[^\s<>"]+)')
-MD_LINK_RE = re.compile(r'\[([^\]]+)]\((https?://[^\s)]+)\)')
-
-def linkify(text: str, shorten: bool = True) -> str:
-    """Convert bare URLs and Markdown-style links into HTML anchor tags.
-
-    Bare links are shortened to keep the UI tidy; markdown links preserve
-    their provided title.
-    """
-    # Markdown links first: [title](url)
-    def _md(match):
-        title, url = match.groups()
-        return f'<a href="{html.escape(url)}">{html.escape(title)}</a>'
-    text = MD_LINK_RE.sub(_md, text)
-
-    # Bare URLs
-    def _url(match):
-        url = match.group(0)
-        display = url
-        if shorten and len(url) > 45:
-            display = url[:25] + "…" + url[-12:]
-        return f'<a href="{html.escape(url)}">{html.escape(display)}</a>'
-    return URL_RE.sub(_url, text)
+# --- Linkification Helper ---
+from src.ui.utils import linkify
 
 # --- Application-specific Imports ---
 from agents import Runner, RunResult
