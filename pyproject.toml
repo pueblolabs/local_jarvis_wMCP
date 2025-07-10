@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-jarvis-wmcp"
+version = "1.0.0"
+authors = [
+  { name="Luis Macias-Navarro", email="luis@lmntstrategy.com" },
+]
+description = "A desktop agent for Google Workspace using MCP and OpenAI Agents SDK."
+readme = "README.md"
+requires-python = ">=3.11, <3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+]
+
+dependencies = [
+    "PyQt6",
+    "qasync",
+    "openai-agents",
+    "python-dotenv",
+    "keyring",
+    "pyperclip",
+    "Flask",
+    "werkzeug",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-qt",
+    "pyinstaller",
+]
+
+[project.scripts]
+local-jarvis = "src.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
