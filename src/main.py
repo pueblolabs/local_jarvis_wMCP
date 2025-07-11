@@ -73,7 +73,37 @@ def load_and_validate_config():
             raise SystemExit("Setup cancelled: A Google email address is required.")
     config["USER_GOOGLE_EMAIL"] = user_email
 
-    # 3. MCP Server Command Configuration
+
+    # 4. RegNavigator and Gemini API Keys
+    regs_api_key = secure_store.get_secret("REGS_API_KEY")
+    if not regs_api_key:
+        key, ok = QInputDialog.getText(
+            None, "RegNavigator API Key",
+            "Please enter your Regulations.gov API Key:", QLineEdit.EchoMode.Password
+        )
+        if ok and key:
+            secure_store.set_secret("REGS_API_KEY", key)
+            regs_api_key = key
+        else:
+            raise SystemExit("Setup cancelled: A RegNavigator API Key is required for the summarize_docket tool.")
+    config["REGS_API_KEY"] = regs_api_key
+    os.environ['REGS_API_KEY'] = regs_api_key
+
+    gemini_api_key = secure_store.get_secret("GEMINI_API_KEY")
+    if not gemini_api_key:
+        key, ok = QInputDialog.getText(
+            None, "Gemini API Key",
+            "Please enter your Google Gemini API Key (for docket analysis):", QLineEdit.EchoMode.Password
+        )
+        if ok and key:
+            secure_store.set_secret("GEMINI_API_KEY", key)
+            gemini_api_key = key
+        else:
+            raise SystemExit("Setup cancelled: A Gemini API Key is required for the summarize_docket tool.")
+    config["GEMINI_API_KEY"] = gemini_api_key
+    os.environ['GEMINI_API_KEY'] = gemini_api_key
+
+    # 5. MCP Server Command Configuration
     raw_command = os.getenv("MCP_SERVER_COMMAND", "uvx,workspace-mcp")
     cmd_list = [part.strip() for part in raw_command.split(",")]
     if "--single-user" not in cmd_list:

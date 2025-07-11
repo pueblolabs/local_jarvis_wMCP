@@ -6,7 +6,7 @@ This module defines the main graphical user interface (GUI) using PyQt6 and qasy
 It provides a chat-like interface for interacting with an AI agent,
 controls for managing the backend server, and a log view for diagnostics.
 """
-
+import markdown
 import sys
 import asyncio
 import re
@@ -31,9 +31,6 @@ from PyQt6.QtCore import QUrl, pyqtSlot
 from PyQt6.QtGui import QIcon, QPalette, QColor, QDesktopServices
 import pyperclip
 from qasync import asyncSlot
-
-# --- Linkification Helper ---
-from src.ui.utils import linkify
 
 # --- Application-specific Imports ---
 from agents import Runner, RunResult
@@ -100,6 +97,14 @@ STYLESHEET = f"""
     }}
     QLineEdit:focus, QTextEdit:focus {{
         border: 1px solid {UIColors.PRIMARY};
+    }}
+    /* Style for links in the QTextBrowser */
+    QTextBrowser a {{
+        color: {UIColors.PRIMARY};
+        text-decoration: none;
+    }}
+    QTextBrowser a:hover {{
+        text-decoration: underline;
     }}
     QStatusBar {{
         font-size: 12px;
@@ -330,9 +335,11 @@ class MainWindow(QMainWindow):
                 auth_url = auth_url_match.group(1).strip()
                 self._handle_auth_url(auth_url)
             else:
-                final_output_html = linkify(final_output)
+                # Convert the agent's Markdown output to HTML
+                final_output_html = markdown.markdown(final_output, extensions=['fenced_code'])
                 self.append_conversation(
-                    f"<p style='color: {UIColors.AGENT_MSG};'><b>Jarvis</b>: {final_output_html}</p>"
+                    # Wrap the generated HTML in a div for consistent styling
+                    f"<div style='color: {UIColors.AGENT_MSG};'><b>Jarvis</b>: {final_output_html}</div>"
                 )
 
         except Exception as e:
