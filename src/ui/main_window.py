@@ -43,16 +43,16 @@ logger = logging.getLogger(__name__)
 
 class UIColors:
     """Centralized color palette for the UI."""
-    BACKGROUND = "#2B2B2B"
+    BACKGROUND = "#2B2B2B"  #   "#2B2B2B" 
     BACKGROUND_LIGHT = "#3C3F41"
     FOREGROUND = "#A9B7C6"
-    PRIMARY = "#4A90E2"
-    PRIMARY_LIGHT = "#64A4E8"
-    SUCCESS = "#5FAD56"
+    PRIMARY = "#4A4CE29D"
+    PRIMARY_LIGHT = "#5785E289"
+    SUCCESS = "#5657AD"
     ERROR = "#D9534F"
     WARNING = "#F0AD4E"
-    USER_MSG = "#87CEEB"  # Sky Blue
-    AGENT_MSG = "#E0E0E0"
+    USER_MSG = "#E0E0E0" # Sky Blue
+    AGENT_MSG = "#B8CDCF"
 
 STYLESHEET = f"""
     QMainWindow, QWidget {{

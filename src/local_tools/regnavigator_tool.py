@@ -26,12 +26,12 @@ def _ensure_api_keys_in_env():
 
 @register_tool
 @function_tool
-async def summarize_docket(docket_id: str, max_comments: int = 25) -> str:
+async def summarize_docket(docket_id: str, max_comments: int = 5) -> str:
     """Summarize a US federal docket via RegNavigator.
 
     Args:
         docket_id: e.g. "IRS-2022-0029".
-        max_comments: Sample size for comment analysis (1-250). Defaults to 25.
+        max_comments: Sample size for comment analysis (1-250). Defaults to 5.
 
     Returns:
         Executive-summary bullets plus path of the generated PDF brief.
