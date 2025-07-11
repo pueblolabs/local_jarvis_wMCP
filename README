@@ -1,0 +1,99 @@
+Excellent question. A good `README.md` is essential for any project. Based on the complete architecture and functionality we have built and refined together, here is a comprehensive README file that accurately describes the project.
+
+---
+
+# Jarvis: A Hybrid Desktop AI Agent
+
+Jarvis is a sophisticated, conversational AI desktop assistant designed to streamline your digital life. It combines the power of local on-device tools with remote Google Workspace services, all managed through a clean, intuitive graphical interface.
+
+This project demonstrates a modern hybrid architecture where an AI agent, powered by the `openai-agents` SDK, can seamlessly orchestrate tasks between your local machine (e.g., file system, web search, specialized data analysis) and cloud services (Gmail, Google Calendar, Google Drive) via the **Model Context Protocol (MCP)**.
+
+ 
+*(Note: A placeholder image is used here. You can replace this with a real screenshot of your app.)*
+
+## Core Features
+
+*   **Unified Workspace Management:** Interact with your Google Calendar, Gmail, and Google Drive using natural language.
+*   **Local Tool Integration:** The agent can access local tools to:
+    *   Perform real-time web searches using DuckDuckGo.
+    *   Analyze US federal dockets via the Regulations.gov API, creating summary briefings directly in your Google Drive.
+    *   Create and manage files in a secure, sandboxed local directory (`~/local_jarvis_sandbox`).
+*   **Secure Credential Management:** All API keys and tokens (OpenAI, Google, Regulations.gov) are stored securely in your native OS keychain using the `keyring` library. No plaintext secrets are ever stored on disk.
+*   **Rich, Readable Interface:** A modern UI built with PyQt6 that renders agent responses in formatted Markdown, providing a clean and readable conversation flow.
+*   **Extensible MCP Architecture:** The agent connects to a `workspace-mcp` server, which manages all Google authentications and tool executions. This makes the system modular and easy to extend with more MCP servers in the future.
+
+## How It Works
+
+Jarvis employs a powerful hybrid architecture:
+
+1.  **UI (PyQt6):** The graphical front-end that you interact with. It manages starting and stopping the backend servers and displays the conversation.
+2.  **AI Agent (`openai-agents` SDK):** The "brain" of the operation. It interprets your requests, formulates plans, and decides which tools to use.
+3.  **Local Tools (Python):** A set of Python functions that the agent can call directly. These tools handle tasks on your local machine, like web searches or running the docket analysis.
+4.  **Remote Tools (MCP Server):** The agent communicates with the `workspace-mcp` server, a separate process that handles all interactions with Google APIs. This server manages complex OAuth 2.0 flows and provides a secure, standardized interface to Google Workspace tools.
+
+This separation of concerns means the main application doesn't need to handle complex authentication logic, and the agent can intelligently delegate tasks to the appropriate toolset, whether local or remote.
+
+## Setup and Installation
+
+### Prerequisites
+
+*   Python 3.11+
+*   An active virtual environment is highly recommended.
+*   `uv` (or `pip`) for package management.
+
+### 1. Clone and Install Dependencies
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd <your-repo-name>
+
+# Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install the project and its dependencies
+pip install -e .
+```
+
+### 2. Initial Configuration (First Run)
+
+The first time you run the application, it will prompt you for any missing API keys. You will need:
+
+*   **OpenAI API Key:** For powering the agent's language model.
+*   **Google Email Address:** The email you will use for Google authentication.
+*   **Regulations.gov API Key:** For the docket analysis tool.
+*   **Google Gemini API Key:** Required by the docket analysis library for summarization.
+
+Run the application using the configured entry point:
+
+```bash
+local-jarvis
+```
+
+On the first run, a series of dialog boxes will appear asking for the keys listed above. Once entered, they will be stored securely in your OS keychain for all future sessions.
+
+### 3. Google Authentication (First Tool Use)
+
+The very first time you ask the agent to perform a Google-related task (e.g., "What's on my calendar?"), it will require you to authenticate.
+
+*   The agent will detect that authentication is needed.
+*   A dialog box will appear in the UI with a Google authentication link.
+*   Click "Open Browser" and follow the standard Google sign-in and consent flow.
+*   Once completed, the `workspace-mcp` server will securely store the access token, and you will not need to authenticate again unless you revoke permissions.
+
+## Usage
+
+1.  **Launch the Application:**
+    ```bash
+    local-jarvis
+    ```
+2.  **Start the Server:** In the UI, click the "Start Server" button. Wait for the status to change to "Server: Running".
+3.  **Chat with Jarvis:** Begin interacting with the agent in the input field.
+
+**Example Prompts:**
+
+*   "What's on my calendar for the rest of the week?"
+*   "Draft an email to my manager with the subject 'Project Update' and a body of 'Here is the latest status report.'"
+*   "What are the top headlines on Hacker News right now?"
+*   "Please analyze docket number `DOT-OST-2024-0049` and create a briefing for me in a new Google Doc."
