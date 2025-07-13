@@ -35,7 +35,6 @@ from qasync import asyncSlot
 # --- Application-specific Imports ---
 from agents import Runner, RunResult
 from agents.mcp import MCPServerStdio
-from src.core.workspace_agent import create_workspace_agent
 
 logger = logging.getLogger(__name__)
 
@@ -138,8 +137,9 @@ class ServerState(Enum):
 class MainWindow(QMainWindow):
     """The main window of the Jarvis Desktop Agent application."""
 
-    def __init__(self, mcp_command: list, mcp_cwd: Optional[str]):
+    def __init__(self, agent_factory, mcp_command: list, mcp_cwd: Optional[str]):
         super().__init__()
+        self.agent_factory = agent_factory
         self.mcp_command = mcp_command
         self.mcp_cwd = mcp_cwd
 
@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
                 "env": {**os.environ},
             }
         )
-        self.agent = create_workspace_agent(mcp_server=self.mcp_server)
+        self.agent = self.agent_factory(mcp_server=self.mcp_server)
         self.conversation_history: List[Dict[str, Any]] = []
 
     def _setup_ui(self):
@@ -327,8 +327,21 @@ class MainWindow(QMainWindow):
         try:
             input_list = self.conversation_history + [{"role": "user", "content": user_text}]
             result: RunResult = await Runner.run(self.agent, input_list)
-            self.conversation_history = result.to_input_list()
-            final_output = str(result.final_output)
+
+            # The agent's final summary should be displayed, but not added to the
+            # history that is fed back into the next prompt.
+            if result.final_output:
+                final_output = str(result.final_output)
+                # Update history *without* the final output, to avoid confusing the agent
+                # on the next turn. The history should only contain the sequence of
+                # tool calls and intermediate steps.
+                self.conversation_history = result.to_input_list(
+                    include_final_output=False
+                )
+            else:
+                # If there's no final output, it's likely an intermediate step (like auth)
+                final_output = result.new_items[-1].to_dict()['content']
+                self.conversation_history = result.to_input_list()
 
             auth_url_match = re.search(r'(https?://accounts.google.com/o/oauth2/auth\S+)', final_output)
             if auth_url_match:
