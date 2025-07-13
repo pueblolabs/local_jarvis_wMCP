@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QApplication, QMessageBox, QInputDialog, QLineEdit
 import asyncio
 from qasync import QEventLoop
 
+from src.core.multi_agent import create_agent
 from src.ui.main_window import MainWindow
 # The main window now manages the MCPServer, so we don't need to import it here.
 from src.utils import secure_store
@@ -139,6 +140,7 @@ def main() -> None:
 
         # Instantiate and show the main window
         window = MainWindow(
+            agent_factory=create_agent,
             mcp_command=config["MCP_SERVER_COMMAND"],
             mcp_cwd=config["MCP_SERVER_CWD"],
         )

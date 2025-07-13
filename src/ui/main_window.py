@@ -335,9 +335,7 @@ class MainWindow(QMainWindow):
                 # Update history *without* the final output, to avoid confusing the agent
                 # on the next turn. The history should only contain the sequence of
                 # tool calls and intermediate steps.
-                self.conversation_history = result.to_input_list(
-                    include_final_output=False
-                )
+                self.conversation_history = result.to_input_list()
             else:
                 # If there's no final output, it's likely an intermediate step (like auth)
                 final_output = result.new_items[-1].to_dict()['content']

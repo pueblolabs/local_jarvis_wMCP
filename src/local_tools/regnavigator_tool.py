@@ -4,6 +4,7 @@ import os
 import keyring
 from agents import function_tool
 from . import register_tool
+import asyncio
 
 SANDBOX_DIR = os.path.expanduser("~/local_jarvis_sandbox")
 # Use the same service name as the rest of the application
@@ -76,3 +77,27 @@ async def summarize_docket(docket_id: str, max_comments: int = 5) -> str:
         return (
             f"An error occurred while running RegNavigator for docket {docket_id}: {e}."
         )
+
+@register_tool
+@function_tool
+async def summarize_dockets_concurrently(docket_ids: list[str], max_comments: int = 5) -> str:
+    """Summarize multiple US federal dockets concurrently via RegNavigator.
+
+    Args:
+        docket_ids: A list of docket IDs, e.g. ["IRS-2022-0029", "FTC-2023-0066"].
+        max_comments: Sample size for comment analysis (1-250) for each docket. Defaults to 5.
+
+    Returns:
+        A summary of the results for each docket, including the paths of the generated PDF briefs.
+    """
+    tasks = [summarize_docket(docket_id, max_comments) for docket_id in docket_ids]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    response = "Finished processing all dockets.\n\n"
+    for docket_id, result in zip(docket_ids, results):
+        if isinstance(result, Exception):
+            response += f"**Docket {docket_id}:**\n- Error: {result}\n\n"
+        else:
+            response += f"**Docket {docket_id}:**\n{result}\n\n"
+
+    return response
