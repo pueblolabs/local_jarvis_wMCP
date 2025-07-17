@@ -1,0 +1,14 @@
+# config.yaml
+# Configuration for Jarvis agent features.
+# This file is created automatically if it doesn't exist.
+
+# Settings for the parallel docket orchestrator
+docket_orchestrator:
+  synthesis_prompt: |
+    You are a helpful assistant. You have received several executive summaries from analyses of different US federal dockets.
+    Your task is to combine these individual summaries into a single, well-structured, and cohesive briefing.
+    Use Markdown for formatting, including headers for each docket ID and bullet points for clarity.
+    Be sure to include the full file path for each generated PDF brief.
+    
+    IMPORTANT: After presenting the combined briefing, you MUST ask the user what to do next with this information. For example: "The research is complete. What would you like to do next with these findings?"
+    Do NOT attempt to complete any other tasks. Your only job is to synthesize the text and then ask what to do next.

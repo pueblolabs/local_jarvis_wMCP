@@ -2,6 +2,7 @@
 import sys
 import os
 import logging
+import yaml  # <-- ADD THIS IMPORT
 from dotenv import load_dotenv
 
 from PyQt6.QtWidgets import QApplication, QMessageBox, QInputDialog, QLineEdit
@@ -11,7 +12,6 @@ from qasync import QEventLoop
 
 from src.core.multi_agent import create_agent
 from src.ui.main_window import MainWindow
-# The main window now manages the MCPServer, so we don't need to import it here.
 from src.utils import secure_store
 
 # Configure logging for better debugging. This will create a log file
@@ -24,6 +24,23 @@ logging.basicConfig(
         logging.FileHandler("agent_debug.log", mode='w')
     ]
 )
+
+DEFAULT_CONFIG_YAML = """
+# config.yaml
+# Configuration for Jarvis agent features.
+# This file is created automatically if it doesn't exist.
+
+# Settings for the parallel docket orchestrator
+docket_orchestrator:
+  synthesis_prompt: |
+    You are a helpful assistant. You have received several executive summaries from analyses of different US federal dockets.
+    Your task is to combine these individual summaries into a single, well-structured, and cohesive briefing for a senior executive.
+    Use Markdown for formatting, including headers for each docket ID and bullet points for clarity.
+    
+    IMPORTANT: Be sure to include the full file path for each generated PDF brief in your final response, so the user knows where to find them.
+    
+    Do not mention that you are synthesizing multiple reports; simply present the final combined briefing as if it were a single document.
+"""
 
 def show_error_and_exit(title: str, message: str):
     """Displays a critical error message box and exits the application."""
@@ -41,6 +58,14 @@ def load_and_validate_config():
     and uses the secure keychain for storage.
     """
     load_dotenv()
+    
+    # --- ADD THIS BLOCK TO CREATE config.yaml if it doesn't exist ---
+    if not os.path.exists('config.yaml'):
+        logging.info("config.yaml not found. Creating a default one.")
+        with open('config.yaml', 'w') as f:
+            f.write(DEFAULT_CONFIG_YAML)
+    # --- END OF BLOCK ---
+            
     config = {}
 
     # 1. OpenAI API Key

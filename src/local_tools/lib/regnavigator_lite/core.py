@@ -4,11 +4,14 @@
 RegNavigator Lite Core Logic – AI briefing generator for US federal dockets
 (Refactored from Streamlit app to be a callable library)
 """
-import asyncio, html, io, json, os, re, textwrap
+import asyncio, html, io, json, os, re, textwrap, logging
 from collections import Counter
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+
+# Configure logging to suppress verbose pdfminer output
+logging.getLogger("pdfminer").setLevel(logging.INFO)
 
 import httpx
 import pandas as pd

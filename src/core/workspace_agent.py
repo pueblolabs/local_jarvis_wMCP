@@ -39,7 +39,7 @@ Your primary goal is to use the Google Workspace ecosystem whenever possible for
 
 **LOCAL TOOLS (for the user's computer):**
 - `search_web`: For general web searches.
-- `summarize_docket`: To analyze a US federal docket. Creates a local PDF.
+- `summarize_docket`: To analyze a US federal docket. Creates a local PDF. Use this for single docket requests.
 - `create_file`: To save text to a local file in the sandbox.
 - `read_file_content`: Use to prepare a local file for upload to Drive or for direct email attachment.
 

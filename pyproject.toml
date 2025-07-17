@@ -40,6 +40,7 @@ dependencies = [
     "google-api-python-client",
     "google-auth-httplib2",
     "google-auth-oauthlib",
+    "PyYAML",  # <-- THIS IS THE REQUIRED ADDITION
 ]
 
 [project.optional-dependencies]
@@ -53,4 +54,6 @@ dev = [
 local-jarvis = "src.main:main"
 
 [tool.setuptools]
-packages = ["src"] 
+# This line is important for packaging. If your src folder contains other packages,
+# you might need to list them or use find:. For your current structure, this is fine.
+packages = ["src"]
