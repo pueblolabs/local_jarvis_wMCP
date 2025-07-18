@@ -40,7 +40,19 @@ dependencies = [
     "google-api-python-client",
     "google-auth-httplib2",
     "google-auth-oauthlib",
-    "PyYAML",  # <-- THIS IS THE REQUIRED ADDITION
+    "PyYAML",
+    # Dependencies for arxiv-mcp-server
+    "arxiv-mcp-server @ git+https://github.com/blazickjp/arxiv-mcp-server.git",
+    "arxiv>=2.1.0",
+    "python-dateutil>=2.8.2",
+    "mcp>=1.2.0",
+    "pymupdf4llm>=0.0.17",
+    "aiohttp>=3.9.1",
+    "pydantic-settings>=2.1.0",
+    "aiofiles>=23.2.1",
+    "uvicorn>=0.30.0",
+    "sse-starlette>=1.8.2",
+    "anyio>=4.2.0",
 ]
 
 [project.optional-dependencies]

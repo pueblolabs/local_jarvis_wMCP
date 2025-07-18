@@ -105,11 +105,13 @@ class ServerState(Enum):
 class MainWindow(QMainWindow):
     """The main window of the Jarvis Desktop Agent application."""
 
-    def __init__(self, agent_factory, mcp_command: list, mcp_cwd: Optional[str]):
+    def __init__(self, agent_factory, workspace_mcp_command: list, workspace_mcp_cwd: Optional[str], arxiv_mcp_command: list, arxiv_mcp_storage_path: Optional[str]):
         super().__init__()
         self.agent_factory = agent_factory
-        self.mcp_command = mcp_command
-        self.mcp_cwd = mcp_cwd
+        self.workspace_mcp_command = workspace_mcp_command
+        self.workspace_mcp_cwd = workspace_mcp_cwd
+        self.arxiv_mcp_command = arxiv_mcp_command
+        self.arxiv_mcp_storage_path = arxiv_mcp_storage_path
         self.progress_widgets: Dict[str, (QLabel, QProgressBar)] = {}
 
         self._setup_agent()
@@ -123,16 +125,31 @@ class MainWindow(QMainWindow):
         )
 
     def _setup_agent(self):
-        """Initializes the agent and MCP server connection."""
-        self.mcp_server = MCPServerStdio(
+        """Initializes the agent and MCP server connections."""
+        # Workspace Server
+        self.workspace_mcp_server = MCPServerStdio(
             params={
-                "command": self.mcp_command[0],
-                "args": self.mcp_command[1:],
-                "cwd": self.mcp_cwd,
+                "command": self.workspace_mcp_command[0],
+                "args": self.workspace_mcp_command[1:],
+                "cwd": self.workspace_mcp_cwd,
                 "env": {**os.environ},
             }
         )
-        self.agent = self.agent_factory(mcp_server=self.mcp_server)
+
+        # ArXiv Server
+        arxiv_args = self.arxiv_mcp_command[1:]
+        if self.arxiv_mcp_storage_path:
+            arxiv_args.extend(["--storage-path", self.arxiv_mcp_storage_path])
+
+        self.arxiv_mcp_server = MCPServerStdio(
+            params={
+                "command": self.arxiv_mcp_command[0],
+                "args": arxiv_args,
+                "env": {**os.environ},
+            }
+        )
+
+        self.agent = self.agent_factory(mcp_servers=[self.workspace_mcp_server, self.arxiv_mcp_server])
         self.conversation_history: List[Dict[str, Any]] = []
 
     def _setup_ui(self):
@@ -226,38 +243,65 @@ class MainWindow(QMainWindow):
 
     @asyncSlot()
     async def start_server(self):
-        """Asynchronously starts the MCP server."""
+        """Asynchronously starts both MCP servers."""
         self.update_server_status(ServerState.STARTING)
-        self.append_server_log("Attempting to connect to MCP server...")
-        try:
-            await self.mcp_server.connect()
+        self.append_server_log("[Workspace] Attempting to connect...")
+        self.append_server_log("[ArXiv] Attempting to connect...")
+
+        results = await asyncio.gather(
+            self.workspace_mcp_server.connect(),
+            self.arxiv_mcp_server.connect(),
+            return_exceptions=True
+        )
+
+        workspace_ok = not isinstance(results[0], Exception)
+        arxiv_ok = not isinstance(results[1], Exception)
+
+        if workspace_ok:
+            self.append_server_log("INFO: [Workspace] MCP Server connection successful.")
+        else:
+            self.append_server_log(f"ERROR: [Workspace] {results[0]}")
+            logger.error("Failed to start Workspace MCP server.", exc_info=results[0])
+
+        if arxiv_ok:
+            self.append_server_log("INFO: [ArXiv] MCP Server connection successful.")
+        else:
+            self.append_server_log(f"ERROR: [ArXiv] {results[1]}")
+            logger.error("Failed to start ArXiv MCP server.", exc_info=results[1])
+
+        if workspace_ok and arxiv_ok:
             self.update_server_status(ServerState.RUNNING)
-            self.append_server_log("INFO: MCP Server connection successful.")
             self.append_conversation(
                 f"<b style='color: {UIColors.PRIMARY};'>Jarvis</b>: "
-                "Server connected. What can I do for you today?"
+                "All servers connected. What can I do for you today?"
             )
-        except Exception as e:
+        else:
             self.update_server_status(ServerState.ERROR)
-            self.append_server_log(f"ERROR: {e}")
-            logger.error("Failed to start MCP server.", exc_info=True)
+            self.append_conversation(
+                f"<b style='color: {UIColors.ERROR};'>Jarvis</b>: "
+                "One or more servers failed to start. Please check the server log."
+            )
 
     @asyncSlot()
     async def stop_server(self):
-        """Asynchronously stops the MCP server."""
-        if self.mcp_server.is_running():
-            self.update_server_status(ServerState.STOPPING)
-            self.append_server_log("Attempting to clean up MCP server connection...")
-            try:
-                await self.mcp_server.cleanup()
-            except Exception as e:
-                logger.error("Error during MCP server cleanup.", exc_info=True)
-                self.append_server_log(f"WARN: Error during cleanup: {e}")
-            finally:
-                self.update_server_status(ServerState.STOPPED)
-                self.append_server_log("INFO: MCP Server cleanup complete.")
-        else:
-            self.update_server_status(ServerState.STOPPED)
+        """Asynchronously stops both MCP servers."""
+        self.update_server_status(ServerState.STOPPING)
+        self.append_server_log("Attempting to clean up all MCP server connections...")
+
+        results = await asyncio.gather(
+            self.workspace_mcp_server.cleanup(),
+            self.arxiv_mcp_server.cleanup(),
+            return_exceptions=True
+        )
+
+        for i, result in enumerate(results):
+            server_name = "[Workspace]" if i == 0 else "[ArXiv]"
+            if isinstance(result, Exception):
+                logger.error(f"Error during {server_name} MCP server cleanup.", exc_info=result)
+                self.append_server_log(f"WARN: Error during {server_name} cleanup: {result}")
+
+        self.update_server_status(ServerState.STOPPED)
+        self.append_server_log("INFO: All MCP Server cleanup complete.")
 
     @pyqtSlot()
     def on_send_command(self):
@@ -375,23 +419,27 @@ class MainWindow(QMainWindow):
             progress_bar.setStyleSheet(f"QProgressBar::chunk {{ background-color: {UIColors.ERROR}; }}")
 
     def update_server_status(self, state: ServerState):
-        """Updates the UI based on the server's state."""
+        """Updates the UI based on the servers' state."""
         status_map = {
-            ServerState.STOPPED: ("Server: Stopped", UIColors.FOREGROUND, False),
-            ServerState.STARTING: ("Server: Starting...", UIColors.WARNING, False),
-            ServerState.RUNNING: ("Server: Running", UIColors.SUCCESS, True),
-            ServerState.STOPPING: ("Server: Stopping...", UIColors.WARNING, False),
-            ServerState.ERROR: ("Server: Error", UIColors.ERROR, False),
+            ServerState.STOPPED: ("Servers: Stopped", UIColors.FOREGROUND, False),
+            ServerState.STARTING: ("Servers: Starting...", UIColors.WARNING, False),
+            ServerState.RUNNING: ("Servers: Running", UIColors.SUCCESS, True),
+            ServerState.STOPPING: ("Servers: Stopping...", UIColors.WARNING, False),
+            ServerState.ERROR: ("Servers: Error", UIColors.ERROR, False),
         }
-        text, color_hex, is_running = status_map[state]
+        
+        text, color_hex, is_fully_running = status_map[state]
+        
         self.server_status_label.setText(text)
         palette = self.server_status_label.palette()
         palette.setColor(QPalette.ColorRole.WindowText, QColor(color_hex))
         self.server_status_label.setPalette(palette)
+        
         self.start_button.setEnabled(state in [ServerState.STOPPED, ServerState.ERROR])
         self.stop_button.setEnabled(state == ServerState.RUNNING)
-        self._set_input_enabled(is_running)
-        if is_running:
+        self._set_input_enabled(is_fully_running)
+        
+        if is_fully_running:
             self.input_field.setFocus()
 
     def _set_input_enabled(self, enabled: bool):
@@ -432,7 +480,7 @@ class MainWindow(QMainWindow):
         self.append_conversation(
             f"<p style='background-color: {UIColors.WARNING}20; padding: 10px; border-radius: 5px;'>"
             f"<b style='color: {UIColors.WARNING};'>Authentication Required</b>: I need you to authenticate with Google. "
-            "Please follow the instructions in the pop‑up window or your browser, then try your command again.</p>"
+            "Please follow the instructions in the pop\u2011up window or your browser, then try your command again.</p>"
         )
         msg_box = QMessageBox(self)
         msg_box.setIcon(QMessageBox.Icon.Information)
@@ -452,5 +500,5 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         """Ensures the server is stopped when the window is closed."""
         self.append_server_log("INFO: Main window closing, shutting down server...")
-        asyncio.create_task(self.stop_server())
+        self.stop_server()
         event.accept()

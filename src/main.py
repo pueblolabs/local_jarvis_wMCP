@@ -137,6 +137,13 @@ def load_and_validate_config():
     config["MCP_SERVER_COMMAND"] = cmd_list
     config["MCP_SERVER_CWD"] = os.getenv("MCP_SERVER_CWD")
 
+    # 6. ArXiv MCP Server Configuration
+    arxiv_raw_command = os.getenv("ARXIV_MCP_SERVER_COMMAND", "arxiv-mcp-server")
+    arxiv_cmd_list = [part.strip() for part in arxiv_raw_command.split(",")]
+    config["ARXIV_MCP_SERVER_COMMAND"] = arxiv_cmd_list
+    # The storage path will be passed as a command-line argument to the server
+    config["ARXIV_MCP_SERVER_STORAGE_PATH"] = os.getenv("ARXIV_MCP_SERVER_STORAGE_PATH")
+
     logging.info("Configuration loaded and validated successfully.")
     return config
 
@@ -166,8 +173,10 @@ def main() -> None:
         # Instantiate and show the main window
         window = MainWindow(
             agent_factory=create_agent,
-            mcp_command=config["MCP_SERVER_COMMAND"],
-            mcp_cwd=config["MCP_SERVER_CWD"],
+            workspace_mcp_command=config["MCP_SERVER_COMMAND"],
+            workspace_mcp_cwd=config["MCP_SERVER_CWD"],
+            arxiv_mcp_command=config["ARXIV_MCP_SERVER_COMMAND"],
+            arxiv_mcp_storage_path=config["ARXIV_MCP_SERVER_STORAGE_PATH"],
         )
         window.show()
 
