@@ -53,6 +53,7 @@ python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install the project and its dependencies
+# This command also installs the 'arxiv-mcp-server' from the URL specified in pyproject.toml
 pip install -e .
 ```
 
