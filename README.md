@@ -3,7 +3,7 @@
 **A sophisticated, conversational AI desktop assistant designed to streamline your digital life. It combines the power of local on-device tools with remote Google Workspace services, all managed through a clean, intuitive graphical interface.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python version](https://img.shields.io/pypi/pyversions/local-jarvis-wmcp.svg)](https://pypi.python.org/pypi/local-jarvis-wmcp)
+[![Python version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
 *(Note: A placeholder image is used. Please replace this with a real screenshot of your app, ideally showing the new progress panel in action!)*
 
